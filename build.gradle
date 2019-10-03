@@ -15,6 +15,7 @@ ext {
 
 dependencies {
     compile(group: 'org.apache.spark', name: 'spark-core_2.12', version: "$sparkVersion")
+    compile(group: 'org.apache.spark', name: 'spark-sql_2.12', version: "$sparkVersion")
 }
 
 application {
