@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'scala'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    scalaVersion = '2.12.10'
+    sparkVersion = '2.4.4'
+}
+
+dependencies {
+    compile(group: 'org.apache.spark', name: 'spark-core_2.12', version: "$sparkVersion")
+}
+
+application {
+    mainClassName = 'com.fullcontact.interview.RecordFinder'
+}
