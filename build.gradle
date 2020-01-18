@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'scala'
     id 'application'
-
     id 'com.github.maiflai.scalatest' version '0.22'
 }
 

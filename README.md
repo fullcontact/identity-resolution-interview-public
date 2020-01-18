@@ -119,4 +119,9 @@ Query IDs _must not_ appear multiple times on the left side of this output.
 
 ID `FSNMWAF` demonstrates the difference between the two outputs in the samples above.
 
+## How to run
+argument 1 is the path to the queries file
 
+argument 2 is the path to the records file
+
+ex: `./gradlew run --args="./Queries.txt ./Records.txt"`
