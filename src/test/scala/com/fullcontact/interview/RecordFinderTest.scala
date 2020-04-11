@@ -96,14 +96,13 @@ class RecordFinderTest extends FunSuite with Matchers {
 
       val listFromInput = recordsDF
         .filter(array_contains($"listOfIDs", randId))        // find input rows where randId is located
-        .withColumn("listOfIDs", explode($"listOfIDs"))     // put each entry in its own row
+        .withColumn("listOfIDs", explode($"listOfIDs"))
         .collect
         .map(_.getString(0))
         .toSet                                                        // map to set
 
-      withClue("every ID should be contained in every list of IDs: %s".format(randId)) {
-        randId shouldEqual randId
-        // listFromInput shouldEqual listFromOutput
+      withClue("every ID should be contained in every list of IDs: ") {
+        listFromInput shouldEqual listFromOutput
       }
   }
 
