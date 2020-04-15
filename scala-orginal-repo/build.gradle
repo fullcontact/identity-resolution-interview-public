@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'scala'
+    id 'application'
+
+    id 'com.github.maiflai.scalatest' version '0.22'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    scalaVersion = '2.12.10'
+    sparkVersion = '2.4.4'
+}
+
+dependencies {
+    compile(group: 'org.apache.spark', name: 'spark-core_2.12', version: "$sparkVersion")
+    compile(group: 'org.apache.spark', name: 'spark-sql_2.12', version: "$sparkVersion")
+
+    testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.3'
+    testRuntime group: 'org.pegdown', name: 'pegdown',version: '1.6.0'
+}
+
+application {
+    mainClassName = 'com.fullcontact.interview.RecordFinder'
+}
