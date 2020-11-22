@@ -20,6 +20,7 @@ dependencies {
     compile(group: 'org.apache.spark', name: 'spark-sql_2.12', version: "$sparkVersion")
 
     testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.3'
+    testCompile group: 'com.holdenkarau', name: 'spark-testing-base_2.12', version: '2.4.4_1.0.0'
     testRuntime group: 'org.pegdown', name: 'pegdown',version: '1.6.0'
 }
 
