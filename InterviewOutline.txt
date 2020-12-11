@@ -1,0 +1,44 @@
+This is an outline of the interview sections and approximate time allocations.
+The length of the sections can be (and often are) adjusted up or down.
+As we continue to do interviews remotely, we strongly encourage screensharing
+this document in an editor and using it as space to share notes, thoughts,
+or rough design diagrams as needed.
+
+Introductions (5 minutes)
+    Names of the interview panelists, their team, and role in FC.
+    Candidate name, and any intro they want to give for themselves.
+
+Resume and Technical Background (30 minutes)
+    Discuss items from the submitted resume, and talk deeper technical skills.
+
+Homework Assignment (50 minutes)
+    A brief codeless discussion of the design approach by the candidate, then a candidate-led tour of the code.
+    Questions from the panel about specific design choices, optimizations, patterns, etc.
+
+(Space for notes and diagrams)
+
+
+
+
+
+
+
+
+Break (5 minutes)
+    Get up, stretch, grab a drink, whatever you want to come back fresh.
+
+Whiteboard and Algorithms (45 minutes)
+    Work on a design challenge with the panel; demonstrate communication,
+    problem-solving approach, algorithmic analysis, etc.
+
+(Space for notes and diagrams)
+
+
+
+
+
+
+
+
+Candidate Questions (15 minutes)
+    Space for any candidate questions to the panelists about any aspect of the role.
