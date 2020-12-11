@@ -39,6 +39,12 @@ However, we ask that you document how to run your submission
 from a terminal session at the root of the project,
 whether that is by `./gradlew run` or otherwise.
 
+We have seen, in practice, that running the project in a Windows environment
+can be more challenging than on OSX or a Linux distro. Notably, PATH length
+limitations on Windows make the large classpaths that build up on JVM invocations
+not function properly. Workarounds exist, though we recommend using an alternative
+system or a VM to run the project, if possible.
+
 ## The Scenario
 
 In the course of our work,
