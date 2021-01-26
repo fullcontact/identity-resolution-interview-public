@@ -4,13 +4,13 @@ import java.io.File
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{array_contains, array_distinct, col, collect_list, concat_ws, flatten, sort_array, split}
+import org.apache.spark.sql.functions.{array_contains, array_distinct, col, collect_list, concat_ws, flatten, sort_array, split, size, upper}
 
 object RecordFinder {
   def main(args: Array[String]): Unit = {
 
     if (args == null || args.length < 2) {
-      print("Two mandatory arguments have to be passed: 1. Queries file path 2. Records file path")
+      print("Two mandatory arguments have to be passed: \n1. Queries file path \n2. Records file path")
       return
     }
 
@@ -25,11 +25,25 @@ object RecordFinder {
 
     val queries = readQueries(queryPath)
     val records = readRecords(recordPath)
+
     val joined = joinQueryWithRecord(queries, records)
 
     produceOutput1(joined)
     produceOutput2(joined)
 
+  }
+
+  private def readRecords(recordPath: String)(implicit sparkSession: SparkSession) = {
+    readFile(recordPath)
+      .withColumnRenamed("_c0", "identifiers")
+      .withColumn("identifiers_arr", split(col("identifiers"), "\\W"))
+  }
+
+  private def readQueries(queryPath: String)(implicit sparkSession: SparkSession) = {
+    readFile(queryPath)
+      .withColumnRenamed("_c0", "identifier")
+      .filter(size(col("identifier")) === 7)
+      .filter(col("identifier") === upper(col("identifier")))
   }
 
   private def verifyInputFileExists(queryPath: String, messagePrefix: String) = {
@@ -73,7 +87,7 @@ object RecordFinder {
       .csv("./Output1.txt")
   }
 
-  private def readRecords(recordPath: String)(implicit sparkSession: SparkSession) = {
+  private def readFile(path: String)(implicit sparkSession: SparkSession) = {
     val records = sparkSession.read
       .option("header", false)
       .option("inferSchema", true)
@@ -81,22 +95,9 @@ object RecordFinder {
       .option("ignoreTrailingWhiteSpace", true)
       .option("mode", "PERMISSIVE")
       .option("columnNameOfCorruptRecord", "corrupt_record")
-      .csv(recordPath)
-      .withColumnRenamed("_c0", "identifiers")
-      .withColumn("identifiers_arr", split(col("identifiers"), "\\W"))
-    records
-  }
+      .csv(path)
 
-  private def readQueries(queryPath: String)(implicit sparkSession: SparkSession) = {
-    sparkSession.read
-      .option("header", false)
-      .option("inferSchema", true)
-      .option("ignoreLeadingWhiteSpace", true)
-      .option("ignoreTrailingWhiteSpace", true)
-      .option("mode", "PERMISSIVE")
-      .option("columnNameOfCorruptRecord", "corrupt_record")
-      .csv(queryPath)
-      .withColumnRenamed("_c0", "identifier")
+    records
   }
 
   private def initSpark(sparkConf: SparkConf) = {
@@ -115,7 +116,7 @@ object RecordFinder {
       .set("spark.dynamicAllocation.maxExecutors", "5")
       .set("dynamicAllocation.enabled", "true")
       .set("spark.executor.memory", "1g")
-      .set("spark.driver.memory", "2g")
+      .set("spark.driver.memory", "3g")
       .set("spark.hadoop.validateOutputSpecs", "false")
     sparkConf
   }
