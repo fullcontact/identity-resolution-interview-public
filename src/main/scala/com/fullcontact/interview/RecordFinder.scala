@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{array_contains, array_distinct, col, collect_list, concat_ws, flatten, sort_array, split, size, upper}
+import org.apache.spark.sql.functions.{array_contains, array_distinct, col, collect_list, concat_ws, flatten, sort_array, split, length, upper}
 
 object RecordFinder {
   def main(args: Array[String]): Unit = {
@@ -42,7 +42,7 @@ object RecordFinder {
   private def readQueries(queryPath: String)(implicit sparkSession: SparkSession) = {
     readFile(queryPath)
       .withColumnRenamed("_c0", "identifier")
-      .filter(size(col("identifier")) === 7)
+      .filter(length(col("identifier")) === 7)
       .filter(col("identifier") === upper(col("identifier")))
   }
 
