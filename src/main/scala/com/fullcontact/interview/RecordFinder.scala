@@ -14,6 +14,7 @@ object RecordFinder {
       return
     }
 
+    val parallelism = 10
     val queryPath = args(0)
     val recordPath = args(1)
 
@@ -21,12 +22,12 @@ object RecordFinder {
     verifyInputFileExists(recordPath, "Records file")
 
     val sparkConf: SparkConf = buildSparkConf
-    implicit val sparkSession = initSpark(sparkConf)
+    implicit val sparkSession = initSpark("4")
 
     val queries = readQueries(queryPath)
     val records = readRecords(recordPath)
 
-    val joined = joinQueryWithRecord(queries, records)
+    val joined = joinQueryWithRecord(queries.repartition(parallelism), records.repartition(parallelism))
 
     produceOutput1(joined)
     produceOutput2(joined)
@@ -71,7 +72,7 @@ object RecordFinder {
       .coalesce(1)
       .write
       .mode(SaveMode.Overwrite)
-      //      .option("header", "false")
+      .option("header", "false")
       .option("delimiter", ":")
       .csv("./Output2.txt")
   }
@@ -100,24 +101,36 @@ object RecordFinder {
     records
   }
 
-  private def initSpark(sparkConf: SparkConf) = {
+  private def initSpark(sparkConf: SparkConf, parallelism: Integer) = {
     SparkSession.builder().appName("IdentifiersFinder")
-      .master("local[*]")
+      .master(s"local[$parallelism]")
       .config(sparkConf)
       .getOrCreate()
   }
 
+  private def initSpark(parallelism: Integer) = {
+    SparkSession.builder().appName("IdentifiersFinder")
+      .master(s"local[$parallelism]")
+      .getOrCreate()
+  }
+
+  private def initSpark(scaleValue: String = "*") = {
+    SparkSession.builder().appName("IdentifiersFinder")
+      .master(s"local[$scaleValue]")
+      .getOrCreate()
+  }
+
+
   private def buildSparkConf = {
     val sparkConf = new SparkConf()
-      .set("spark.hadoop.validateOutputSpecs", "false")
-      .set("spark.dynamicAllocation.enabled", "true")
-      .set("spark.executor.cores", "4")
-      .set("spark.dynamicAllocation.minExecutors", "1")
-      .set("spark.dynamicAllocation.maxExecutors", "5")
       .set("dynamicAllocation.enabled", "true")
+      .set("spark.dynamicAllocation.minExecutors", "1")
+      .set("spark.dynamicAllocation.maxExecutors", "10")
+      .set("spark.dynamicAllocation.enabled", "true")
+      .set("spark.executor.cores", "2")
+      .set("dynamicAllocation.initialExecutors", "4")
       .set("spark.executor.memory", "1g")
-      .set("spark.driver.memory", "3g")
-      .set("spark.hadoop.validateOutputSpecs", "false")
+      .set("spark.driver.memory", "2g")
     sparkConf
   }
 }
