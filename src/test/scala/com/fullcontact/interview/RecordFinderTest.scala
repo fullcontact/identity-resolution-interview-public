@@ -77,7 +77,7 @@ class RecordFinderTest extends FunSuite with Matchers with BeforeAndAfter {
     val producedOutput1 = produceOutput1(joined)
     val producedOutput2 = produceOutput2(joined)
 
-    val explodedZippedRecords = explodeZippedRecords(records)
+    val explodedZippedRecords = explodeRecords(records)
     var joinedExploded = joinQueryWithRecordExploded(queries, explodedZippedRecords)
     val producedOutput1Exploded = produceOutput1Exploded(joinedExploded)
     val producedOutput2Exploded = produceOutput2Exploded(joinedExploded)

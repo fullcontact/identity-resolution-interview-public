@@ -44,7 +44,7 @@ object RecordFinder {
 
 
   private def procesAsHashJoin(queries: Dataset[Row], records: DataFrame) = {
-    val explodedZippedRecords = explodeZippedRecords(records)
+    val explodedZippedRecords = explodeRecords(records)
     var joined = joinQueryWithRecordExploded(queries, explodedZippedRecords)
 
     saveOutput(produceOutput1Exploded(joined), OUTPUT1_PATH)

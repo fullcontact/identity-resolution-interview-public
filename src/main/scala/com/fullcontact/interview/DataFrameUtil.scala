@@ -9,16 +9,16 @@ import org.apache.spark.sql.types.{LongType, StructField, StructType}
 
 object DataFrameUtil {
 
-  def explodeZippedRecords(records: DataFrame)(implicit sparkSession: SparkSession): DataFrame = {
-    val schema: StructType = records.schema.add(StructField(ID, LongType))
+  def explodeRecords(records: DataFrame)(implicit sparkSession: SparkSession): DataFrame = {
+    //redundant
+//    val schema: StructType = records.schema.add(StructField(ID, LongType))
+//    // Convert DataFrame to RDD and then call zipWithIndex
+//    val dfRDD: RDD[(Row, Long)] = records.rdd.zipWithIndex()
+//    val rowRDD: RDD[Row] = dfRDD.map(tp => Row.merge(tp._1, Row(tp._2)))
+//    // Convert the indexed RDD into a DataFrame
+//    val zippedRecords = sparkSession.createDataFrame(rowRDD, schema)
 
-    // Convert DataFrame to RDD and then call zipWithIndex
-    val dfRDD: RDD[(Row, Long)] = records.rdd.zipWithIndex()
-    val rowRDD: RDD[Row] = dfRDD.map(tp => Row.merge(tp._1, Row(tp._2)))
-    // Convert the indexed RDD into a DataFrame
-    val zippedRecords = sparkSession.createDataFrame(rowRDD, schema)
-
-    val explodedZippedRecords = zippedRecords.select(col("*"), posexplode(col(IDENTIFIERS_ARR)))
+    val explodedZippedRecords = records.select(col("*"), posexplode(col(IDENTIFIERS_ARR)))
       .withColumnRenamed("col", IDENTIFIER)
 
     explodedZippedRecords
@@ -65,7 +65,7 @@ object DataFrameUtil {
 
   def produceOutput1Exploded(joined: Dataset[Row]) = {
     joined
-      .drop(ID, POS, IDENTIFIERS_ARR)
+      .drop(POS, IDENTIFIERS_ARR)
   }
 
   def produceOutput2Exploded(joined: Dataset[Row]): DataFrame = {
@@ -73,7 +73,7 @@ object DataFrameUtil {
       .groupBy(IDENTIFIER)
       .agg(collect_list(IDENTIFIERS_ARR).alias(IDENTIFIERS_ARR))
       .withColumn(IDENTIFIERS_ARR, concat_ws(" ", sort_array(array_distinct(flatten(col(IDENTIFIERS_ARR))))))
-      .drop(IDENTIFIERS, ID, POS)
+      .drop(IDENTIFIERS, POS)
       .select(IDENTIFIER, IDENTIFIERS_ARR)
   }
 
