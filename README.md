@@ -1,3 +1,16 @@
+# Implementation
+There are 2 solution fully based on DataFrames API.
+* The first solution works on top of broadcast inner loop join and it is slow
+* The second solution works on top of hash join and it is way faster
+
+#How to run locally:
+
+* To run **faster** solution execute :  `./gradlew run --args="./Queries.txt ./Records.txt"`
+* To run **slower** solution execute:  `./gradlew run --args="./Queries.txt ./Records.txt slow"`
+
+* To run **tests execute**: `./gradlew test`
+
+
 # Identity Resolution Coding Exercise
 
 Welcome to the take-home coding exercise

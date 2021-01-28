@@ -1,136 +1,72 @@
 package com.fullcontact.interview
 
-import java.io.File
+import org.apache.spark.sql.SparkSession
 
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{array_contains, array_distinct, col, collect_list, concat_ws, flatten, sort_array, split, length, upper}
+import IOUtil._
+import DataFrameUtil._
 
 object RecordFinder {
+
+  val parallelism = 4
+  val workers = "*"
+
+  val OUTPUT1_PATH = "./Output1.txt"
+  val OUTPUT2_PATH = "./Output2.txt"
+
+  implicit val sparkSession = initSpark(workers)
+
   def main(args: Array[String]): Unit = {
 
-    if (args == null || args.length < 2) {
-      print("Two mandatory arguments have to be passed: \n1. Queries file path \n2. Records file path")
-      return
-    }
+    assert (verifyInputParameters(args))
 
-    val parallelism = 10
     val queryPath = args(0)
     val recordPath = args(1)
 
-    verifyInputFileExists(queryPath, "Queries file")
-    verifyInputFileExists(recordPath, "Records file")
+    assert(verifyInputFileExists(queryPath, "Queries file"))
+    assert(verifyInputFileExists(recordPath, "Records file"))
 
-    val sparkConf: SparkConf = buildSparkConf
-    implicit val sparkSession = initSpark("4")
 
     val queries = readQueries(queryPath)
     val records = readRecords(recordPath)
 
-    val joined = joinQueryWithRecord(queries.repartition(parallelism), records.repartition(parallelism))
+    args.length match {
+      // broadcast inner loop join  (join condition "array contains") - slower
+      case 3 => {
 
-    produceOutput1(joined)
-    produceOutput2(joined)
+        val joined = joinQueryWithRecord(queries.repartition(parallelism), records.repartition(parallelism))
 
-  }
-
-  private def readRecords(recordPath: String)(implicit sparkSession: SparkSession) = {
-    readFile(recordPath)
-      .withColumnRenamed("_c0", "identifiers")
-      .withColumn("identifiers_arr", split(col("identifiers"), "\\W"))
-  }
-
-  private def readQueries(queryPath: String)(implicit sparkSession: SparkSession) = {
-    readFile(queryPath)
-      .withColumnRenamed("_c0", "identifier")
-      .filter(length(col("identifier")) === 7)
-      .filter(col("identifier") === upper(col("identifier")))
-  }
-
-  private def verifyInputFileExists(queryPath: String, messagePrefix: String) = {
-    try {
-      if (!new File(queryPath).exists()) {
-        print(s"$messagePrefix: $queryPath, does not exists")
+        saveOutput(produceOutput1(joined), OUTPUT1_PATH)
+        saveOutput(produceOutput2(joined), OUTPUT2_PATH)
       }
-    } catch {
-      case e:Exception => print(e.getMessage)
+      // broadcast hash join - faster
+      case 2 => {
+
+        val explodedZippedRecords = explodeZippedRecords(records)
+        var joined = joinQueryWithRecordExploded(queries, explodedZippedRecords)
+
+        saveOutput(produceOutput1Exploded(joined), OUTPUT1_PATH)
+        saveOutput(produceOutput2Exploded(joined), OUTPUT2_PATH)
+
+      }
     }
+
   }
 
-  private def joinQueryWithRecord(queries: DataFrame, records: DataFrame) = {
-    val joined = queries.join(right = records, array_contains(col("identifiers_arr"), col("identifier"))).repartition(5)
-    joined.cache()
-    joined
-  }
 
-  private def produceOutput2(joined: Dataset[Row]) = {
-    joined
-      .groupBy("identifier")
-      .agg(collect_list("identifiers_arr").alias("identifiers_arr"))
-      .withColumn("identifiers_arr", concat_ws(" ", sort_array(array_distinct(flatten(col("identifiers_arr"))))))
-      .drop("identifiers")
-      .coalesce(1)
-      .write
-      .mode(SaveMode.Overwrite)
-      .option("header", "false")
-      .option("delimiter", ":")
-      .csv("./Output2.txt")
-  }
-
-  private def produceOutput1(joined: Dataset[Row]) = {
-    joined.withColumn("identifiers_arr", concat_ws(" ", col("identifiers")))
-      .drop("identifiers")
-      .coalesce(1)
-      .write
-      .mode(SaveMode.Overwrite)
-      .option("header", "false")
-      .option("delimiter", ":")
-      .csv("./Output1.txt")
-  }
-
-  private def readFile(path: String)(implicit sparkSession: SparkSession) = {
-    val records = sparkSession.read
-      .option("header", false)
-      .option("inferSchema", true)
-      .option("ignoreLeadingWhiteSpace", true)
-      .option("ignoreTrailingWhiteSpace", true)
-      .option("mode", "PERMISSIVE")
-      .option("columnNameOfCorruptRecord", "corrupt_record")
-      .csv(path)
-
-    records
-  }
-
-  private def initSpark(sparkConf: SparkConf, parallelism: Integer) = {
-    SparkSession.builder().appName("IdentifiersFinder")
-      .master(s"local[$parallelism]")
-      .config(sparkConf)
-      .getOrCreate()
-  }
-
-  private def initSpark(parallelism: Integer) = {
-    SparkSession.builder().appName("IdentifiersFinder")
-      .master(s"local[$parallelism]")
-      .getOrCreate()
+  private def verifyInputParameters(args: Array[String]): Boolean = {
+    if (args == null || args.length < 2) {
+      print("Two mandatory arguments have to be passed: \n1. Queries file path \n2. Records file path")
+      return false
+    }
+    true
   }
 
   private def initSpark(scaleValue: String = "*") = {
-    SparkSession.builder().appName("IdentifiersFinder")
+    val session = SparkSession.builder().appName("IdentifiersFinder")
       .master(s"local[$scaleValue]")
       .getOrCreate()
-  }
 
-
-  private def buildSparkConf = {
-    val sparkConf = new SparkConf()
-      .set("dynamicAllocation.enabled", "true")
-      .set("spark.dynamicAllocation.minExecutors", "1")
-      .set("spark.dynamicAllocation.maxExecutors", "10")
-      .set("spark.dynamicAllocation.enabled", "true")
-      .set("spark.executor.cores", "2")
-      .set("dynamicAllocation.initialExecutors", "4")
-      .set("spark.executor.memory", "1g")
-      .set("spark.driver.memory", "2g")
-    sparkConf
+    session.sparkContext.setLogLevel("ERROR")
+    session
   }
 }
