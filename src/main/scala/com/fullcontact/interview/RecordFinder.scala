@@ -1,7 +1,6 @@
 package com.fullcontact.interview
 
-import org.apache.spark.sql.SparkSession
-
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import IOUtil._
 import DataFrameUtil._
 
@@ -32,26 +31,32 @@ object RecordFinder {
     args.length match {
       // broadcast inner loop join  (join condition "array contains") - slower
       case 3 => {
-
-        val joined = joinQueryWithRecord(queries.repartition(parallelism), records.repartition(parallelism))
-
-        saveOutput(produceOutput1(joined), OUTPUT1_PATH)
-        saveOutput(produceOutput2(joined), OUTPUT2_PATH)
+        processAsInnerLoopJoin(queries, records)
       }
       // broadcast hash join - faster
       case 2 => {
-
-        val explodedZippedRecords = explodeZippedRecords(records)
-        var joined = joinQueryWithRecordExploded(queries, explodedZippedRecords)
-
-        saveOutput(produceOutput1Exploded(joined), OUTPUT1_PATH)
-        saveOutput(produceOutput2Exploded(joined), OUTPUT2_PATH)
+        procesAsHashJoin(queries, records)
 
       }
     }
 
   }
 
+
+  private def procesAsHashJoin(queries: Dataset[Row], records: DataFrame) = {
+    val explodedZippedRecords = explodeZippedRecords(records)
+    var joined = joinQueryWithRecordExploded(queries, explodedZippedRecords)
+
+    saveOutput(produceOutput1Exploded(joined), OUTPUT1_PATH)
+    saveOutput(produceOutput2Exploded(joined), OUTPUT2_PATH)
+  }
+
+  private def processAsInnerLoopJoin(queries: Dataset[Row], records: DataFrame) = {
+    val joined = joinQueryWithRecord(queries.repartition(parallelism), records.repartition(parallelism))
+
+    saveOutput(produceOutput1(joined), OUTPUT1_PATH)
+    saveOutput(produceOutput2(joined), OUTPUT2_PATH)
+  }
 
   private def verifyInputParameters(args: Array[String]): Boolean = {
     if (args == null || args.length < 2) {
