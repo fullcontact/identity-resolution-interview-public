@@ -3,12 +3,18 @@ There are 2 solution fully based on DataFrames API.
 * The first solution works on top of broadcast inner loop join and it is slow
 * The second solution works on top of hash join and it is way faster
 
+#Results:
+
+Results are stored as csv file with 2 columns and delimiter ":" and actually as text file satisfy requirements regarding output data format.
+Csv file can be always treated as text, so don`t be confused with file extension. 
+
 #How to run locally:
 
 * To run **faster** solution execute :  `./gradlew run --args="./Queries.txt ./Records.txt"`
 * To run **slower** solution execute:  `./gradlew run --args="./Queries.txt ./Records.txt slow"`
 
 * To run **tests execute**: `./gradlew test`
+
 
 
 # Identity Resolution Coding Exercise
