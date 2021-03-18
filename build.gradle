@@ -21,6 +21,8 @@ dependencies {
 
     testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.3'
     testRuntime group: 'org.pegdown', name: 'pegdown',version: '1.6.0'
+    compile group: 'com.github.mrpowers', name: 'spark-fast-tests_2.12', version: '1.0.0'
+
 }
 
 application {
