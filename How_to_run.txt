@@ -1,0 +1,11 @@
+
+
+
+
+
+
+spark-submit --class com.fullcontact.interview.RecordFinder identity-resolution-interview.jar <path0> <path1> <path2> <path3>
+
+
+Example when running from local:
+spark-submit.cmd --class com.fullcontact.interview.RecordFinder C:\Assignment\identity-resolution-interview-public\build\libs\identity-resolution-interview.jar C:\Assignment\identity-resolution-interview-public\Queries.txt C:\Assignment\identity-resolution-interview-public\Records.txt C:\Assignment\identity-resolution-interview-public\output1 C:\Assignment\identity-resolution-interview-public\output2
