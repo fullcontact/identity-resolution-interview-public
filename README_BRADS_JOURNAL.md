@@ -48,10 +48,18 @@ object RecordFinder {
 
 * Committing the above before doing some validation on the `Records.txt` data
 
+## 2021-07-27 11:39 am - Records and Queries validation
 
+* Validations/tests to do next:
+  * [x] 1 - Make sure both `Records.txt` and `Queries.txt` have _only_ 7-letter (uppercase)
+  * [x] 2 - Find out how many distinct septuplets we have in `Records.txt` and `Queries.txt`.
 
-
-
+* Findings:
+  * Inspecting the files, `Records.txt` is about 1.6 MB in size; `Queries.txt` is about 800 KB in size.
+  * If there are about 100k queries and somewhere around 50k records, that means we've got _on average_ 4 IDs per row of records, and each ID is taking up about 7-ish bytes of space on disk (which makes sense, I guess, for 8-bit ASCII characters)
+  * I get 52772 rows in `Records.txt`.
+  * I get 103279 rows in `Queries.txt`.
+  * After a bit of work, I find that I've imported _no_ non-7-uppercase-letter words from either file.
 
 
 
