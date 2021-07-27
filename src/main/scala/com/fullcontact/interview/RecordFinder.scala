@@ -2,7 +2,7 @@ package com.fullcontact.interview
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.functions.explode
+import org.apache.spark.sql.functions._
 
 object RecordFinder {
   def main(args: Array[String]): Unit = {
@@ -29,7 +29,14 @@ object RecordFinder {
 
     // The following gets me to a flattened DF of (record index : ID)
     val recordsSplitIndexedDF = spark.createDataFrame(recordsSplitRDDIndexed)
-    recordsSplitIndexedDF.select($"_1", explode($"_2")).show(10)
+    val indicesByRecordDF = recordsSplitIndexedDF.select($"_1", explode($"_2"))
+    val indArrayGroupDF = indicesByRecordDF.groupBy("col")
+      .agg(
+        collect_list("_1") as "recordRowNumbers"
+      ).withColumnRenamed("col", "ID")
+
+    indArrayGroupDF.show(10)
+
   }
 
   def validateRecords(records: RDD[Array[String]]) : Unit = {
