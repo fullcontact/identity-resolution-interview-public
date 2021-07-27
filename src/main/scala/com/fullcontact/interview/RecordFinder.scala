@@ -1,8 +1,17 @@
 package com.fullcontact.interview
+import org.apache.spark.{SparkConf, SparkContext}
 
 object RecordFinder {
   def main(args: Array[String]): Unit = {
-    // Testing out some basic Scala functionality in my env first
-    println("Hello, world from a language I'm really not that good at!")
+    // Spark setup/init
+    val conf = new SparkConf()
+      .setAppName("BradsRecordFinder")
+      .setMaster("local")
+    val sc = new SparkContext(conf)
+
+    // Reading info from Records.txt file
+    val recordsRawRDD = sc.textFile("Records.txt")
+    println("Records RDD sample:")
+    recordsRawRDD.take(10).foreach(println)
   }
 }
