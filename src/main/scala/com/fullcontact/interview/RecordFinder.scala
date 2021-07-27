@@ -1,6 +1,8 @@
 package com.fullcontact.interview
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.functions.explode
 
 object RecordFinder {
   def main(args: Array[String]): Unit = {
@@ -9,6 +11,8 @@ object RecordFinder {
       .setAppName("BradsRecordFinder")
       .setMaster("local")
     val sc = new SparkContext(conf)
+    val spark: SparkSession = SparkSession.builder.master("local").getOrCreate
+    import spark.implicits._
 
     // Reading info RDDs from Records.txt file (into arrays of strings) and Queries (into strings)
     val recordsSplitRDD = sc.textFile("Records.txt")
@@ -19,6 +23,13 @@ object RecordFinder {
     validateRecords(recordsSplitRDD)
     validateQueries(queriesRDD)
 
+    // Indexing arrays of strings from records
+    val recordsSplitRDDIndexed = recordsSplitRDD.zipWithIndex()
+      .map{case (k,v) => (v,k)}
+
+    // The following gets me to a flattened DF of (record index : ID)
+    val recordsSplitIndexedDF = spark.createDataFrame(recordsSplitRDDIndexed)
+    recordsSplitIndexedDF.select($"_1", explode($"_2")).show(10)
   }
 
   def validateRecords(records: RDD[Array[String]]) : Unit = {

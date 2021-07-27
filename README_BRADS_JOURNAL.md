@@ -61,7 +61,15 @@ object RecordFinder {
   * I get 103279 rows in `Queries.txt`.
   * After a bit of work, I find that I've imported _no_ non-7-uppercase-letter words from either file.
 
+## 2021-07-27 2:47 pm - Indexing Records; Mapping records to (ID String, Set[Int]) map
 
+* I'd like to transform my Records RDD now to a Map of Strings keys (IDs) to _Set[Int]_ values pointing to the _index_ of the record in the Records RDD
+  * This might seem kind of weird, but it'll give us a sort of 'just in time'/'lazy' way to output `Output1.txt` queries instead of redundantly repeating _every_ record row for _every_ ID that contains it.
+  * It'll make our `Output1.txt` queries _somewhat_ slower while saving us having to store a bunch of redundant/non-normalized data.
+
+## 2021-07-27 3:56 pm - Flattening out the records
+
+* I've flattened out the records to (record index : ID) 'pairs'; now will have to reassemble into a {ID : [record _indices_]} map.
 
 
 
