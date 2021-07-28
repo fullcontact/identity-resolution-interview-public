@@ -1,8 +1,13 @@
 package com.fullcontact.interview
+import java.io.File
+import java.nio.file.{Paths, Files}
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.functions._
+
+import scala.reflect.io.Directory
 
 object RecordFinder {
   def main(args: Array[String]): Unit = {
@@ -30,7 +35,7 @@ object RecordFinder {
     val recordsIndicesFlatDF = recordsSplitIndexedDF.select($"recordsIndex", explode($"partialNeighborArray"))
       .withColumnRenamed("col", "ID")
 
-    // Bringing Queries into a dataframe for joining into the tables above. Order results by query ind?
+    // Bringing Queries into a dataframe for joining into the tables above.
     val queriesDF = spark.createDataFrame(queriesRDD.zipWithIndex())
       .withColumnRenamed("_1", "ID")
       .withColumnRenamed("_2", "queryIndex")
@@ -45,8 +50,25 @@ object RecordFinder {
         recordsSplitIndexedDF("partialNeighborArray") as "partialNeighborArray"
       )
 
-    output1preTransformDF.show(10)
+    // Transforming and outputting Output1 (clearing a path if necessary for an idempotent output)
+    if (Files.exists(Paths.get("./Output1.txt"))){
+      val dir = new Directory(new File("./Output1.txt"))
+      dir.deleteRecursively()
+    }
 
+    val output1ConcatArray = output1preTransformDF
+      .select(
+        output1preTransformDF("ID"),
+        output1preTransformDF("partialNeighborArray")
+      )
+      .withColumn("partialNeighborArray", concat_ws(" ", col("partialNeighborArray")))
+      .rdd
+      .map(_.toString()
+        .replace(",", ": ")
+        .replace("[", "")
+        .replace("]", "")
+      )
+      .saveAsTextFile("./Output1.txt")
   }
 
   def validateRecords(records: RDD[Array[String]]) : Unit = {

@@ -108,7 +108,7 @@ MIBEQWC: ODLVKBD YJQPIDO ...
 LGDPBFS: GTLLOMC LGDPBFS ...
 ```
 
-I'll do a little searching here to figure out how I want to do that.
+I'll do a little searching here to figure out how I want to do that. [This StackOverflow link](https://stackoverflow.com/questions/44537889/write-store-dataframe-in-text-file) has got pretty much just what I need.
 
 
 
