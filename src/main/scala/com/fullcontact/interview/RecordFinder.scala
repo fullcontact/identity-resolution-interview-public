@@ -25,9 +25,9 @@ object RecordFinder {
 
     // The following gets us to a flattened 'bridge' DF of (record index : ID) to join against Queries
     val recordsSplitIndexedDF = spark.createDataFrame(recordsSplitRDD.zipWithIndex())
-      .withColumnRenamed("_1", "neighborArray")
+      .withColumnRenamed("_1", "partialNeighborArray")
       .withColumnRenamed("_2", "recordsIndex")
-    val recordsIndicesFlatDF = recordsSplitIndexedDF.select($"recordsIndex", explode($"neighborArray"))
+    val recordsIndicesFlatDF = recordsSplitIndexedDF.select($"recordsIndex", explode($"partialNeighborArray"))
       .withColumnRenamed("col", "ID")
 
     // Bringing Queries into a dataframe for joining into the tables above. Order results by query ind?
@@ -35,7 +35,17 @@ object RecordFinder {
       .withColumnRenamed("_1", "ID")
       .withColumnRenamed("_2", "queryIndex")
 
-    queriesDF.show(10)
+    // Getting pre-transforms, pre-ordering version of Output1
+    val output1preTransformDF = queriesDF
+      .join(recordsIndicesFlatDF, queriesDF("ID") === recordsIndicesFlatDF("ID"), "inner")
+      .join(recordsSplitIndexedDF, recordsIndicesFlatDF("recordsIndex") === recordsSplitIndexedDF("recordsIndex"), "inner")
+      .select(
+        queriesDF("ID") as "ID",
+        queriesDF("queryIndex") as "queryIndex",
+        recordsSplitIndexedDF("partialNeighborArray") as "partialNeighborArray"
+      )
+
+    output1preTransformDF.show(10)
 
   }
 

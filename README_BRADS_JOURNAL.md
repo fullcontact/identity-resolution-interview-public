@@ -75,13 +75,40 @@ object RecordFinder {
 
 ## 2021-07-28 10:23 am - time to join up queries and ID:records index
 
-* Time for my first join!
+* Time for my first join! I'll need to do the following:
+  * Join the queries RDD to the recordsIndicesFlatDF on `queriesDF.ID` = `recordsIndicesFlatDF.ID`
+  * Join the result of the above on `recordsIndicesFlatDF.recordsIndex` = `recordsSplitIndexedDF.recordsIndex`
+  * Select `queriesDF.ID` and `recordsSplitIndexedDF.neighborArray` _and_ `queriesDF.queryIndex` _but not do any ordering or transforms just yet (thinking ahead to Output2 :) )
 
+## 2021-07-28 11:13 am - Reviewing Output1 join results and getting ready to transform into text
 
+So here's the kind of thing I see from my join output:
 
+```
++-------+----------+--------------------+
+|     ID|queryIndex|partialNeighborArray|
++-------+----------+--------------------+
+|MIBEQWC|      2977|[ODLVKBD, YJQPIDO...|
+|LGDPBFS|     18334|  [GTLLOMC, LGDPBFS]|
+|RSCSFYV|     17542|[RSCSFYV, CUGOPLE...|
+|DGYMWSH|     40066|  [DGYMWSH, UCONIWZ]|
+|VKWWQBM|     33245|[GJKJEKK, VJBRCTI...|
+|CYAZJIP|     71158|[LVDSTNS, CYAZJIP...|
+|TRVKNRO|     68351|[XDBLOUQ, MXUTKEI...|
+|LFIYDGA|     13289|[YMWYXPH, LFIYDGA...|
+|MSJJROI|     35625|  [VYPXMGD, MSJJROI]|
+|JLDNUWE|     25024|[HNZXKEX, THWTEUK...|
++-------+----------+--------------------+
+```
 
+I'm _just_ about ready to output my results to `Output1.txt`. Will need to make rows of the above like:
 
+```
+MIBEQWC: ODLVKBD YJQPIDO ...
+LGDPBFS: GTLLOMC LGDPBFS ...
+```
 
+I'll do a little searching here to figure out how I want to do that.
 
 
 
