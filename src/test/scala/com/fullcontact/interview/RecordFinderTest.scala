@@ -33,9 +33,17 @@ class RecordFinderTest extends FunSuite with Matchers {
 
   test("Validation of Queries input after RDD transformation") {
     val goodQRdd = sc.parallelize(Array("ABCDEFG","HIJKLMN","OPQRSTU"))
+    val badQRdd1 = sc.parallelize(Array("ABCDEFG","HIJKLMN","OPQRST1"))
+    val badQRdd2 = sc.parallelize(Array("ABCDEFG","HIJKLMn","OPQRSTU"))
+    val badQRdd3 = sc.parallelize(Array("ABCDEF","HIJKLMn","OPQRSTU"))
+    val sa : Array[String] = Array()
+    val badQRdd4 = sc.parallelize(sa)
 
     assert(RecordFinder.validateQueries(goodQRdd) == true)
-
+    assertThrows[RuntimeException]{RecordFinder.validateQueries(badQRdd1)}
+    assertThrows[RuntimeException]{RecordFinder.validateQueries(badQRdd2)}
+    assertThrows[RuntimeException]{RecordFinder.validateQueries(badQRdd3)}
+    assertThrows[RuntimeException]{RecordFinder.validateQueries(badQRdd4)}
   }
 
 }
