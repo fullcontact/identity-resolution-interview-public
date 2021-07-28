@@ -57,12 +57,9 @@ object RecordFinder {
       val dir1 = new Directory(new File("./Output1.txt"))
       dir1.deleteRecursively()
     }
-    output1preTransformDF
-      .select(
-        output1preTransformDF("ID"),
-        output1preTransformDF("partialNeighborArray")
-      )
+    val output1printout = output1preTransformDF
       .withColumn("partialNeighborString", concat_ws(" ", col("partialNeighborArray")))
+      .select("ID", "partialNeighborString")
       .rdd
       .map(_.toString()
         .replace(",", ": ")
@@ -76,7 +73,7 @@ object RecordFinder {
       val dir2 = new Directory(new File("./Output2.txt"))
       dir2.deleteRecursively()
     }
-    output1preTransformDF
+    val output2printout = output1preTransformDF
       .rdd
       .map(row => (row.get(0), row.get(1).asInstanceOf[mutable.WrappedArray[String]].toSet))
       .reduceByKey(_ | _)
