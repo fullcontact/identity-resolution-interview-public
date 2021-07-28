@@ -16,7 +16,7 @@ object RecordFinder {
     // Spark setup/init
     val conf = new SparkConf()
       .setAppName("BradsRecordFinder")
-      .setMaster("local")
+      .setMaster("local[4]")
     val sc = new SparkContext(conf)
 
     // Reading info RDDs from Records.txt file (into arrays of strings) and Queries (into strings)
@@ -31,9 +31,12 @@ object RecordFinder {
     // Generate Output 1 DF that'll be used in both Output 1 text and Output 2 processing/text
     val output1DF = generateOutput1DF(recordsSplitRDD, queriesRDD)
 
-    // Transforming and outputting Output1 and Output2 (clearing a path if necessary for an idempotent output)
-    generateOutput1(output1DF)
-    generateOutput2(output1DF)
+    // Transforming and outputting Output1 and Output2
+    val output1RDD = generateFinalOutput1RDD(output1DF)
+    val output2RDD = generateFinalOutput2RDD(output1DF)
+
+    saveOutputText(output1RDD, "./Output1.txt")
+    saveOutputText(output2RDD, "./Output2.txt")
   }
 
   def validateRecords(records: RDD[Array[String]]) : Unit = {
@@ -75,11 +78,8 @@ object RecordFinder {
         upperCount += 1
       }
     })
-    if (upperCount == 7) {
-      return 0
-    } else {
-      return 1
-    }
+    if (upperCount == 7) 0 else 1
+
   }
 
   def generateOutput1DF(recordsSplitRDD: RDD[Array[String]], queriesRDD: RDD[String]): DataFrame = {
@@ -100,24 +100,17 @@ object RecordFinder {
       .withColumnRenamed("_1", "ID")
       .withColumnRenamed("_2", "queryIndex")
 
-    // Getting DF version of Output1 (find what - 0:Many - Records array each Query ID was in)
-    val output1DF = queriesDF
+    // Returning  DF version of Output1 (find what - 0:Many - Records array each Query ID was in)
+    queriesDF
       .join(recordsIndicesFlatDF, queriesDF("ID") === recordsIndicesFlatDF("ID"), "inner")
       .join(recordsSplitIndexedDF, recordsIndicesFlatDF("recordsIndex") === recordsSplitIndexedDF("recordsIndex"), "inner")
       .select(
         queriesDF("ID") as "ID",
         recordsSplitIndexedDF("partialNeighborArray") as "partialNeighborArray"
       )
-
-    return output1DF
   }
 
-  def generateOutput1(df: DataFrame): Unit = {
-    if (Files.exists(Paths.get("./Output1.txt"))){
-      val dir1 = new Directory(new File("./Output1.txt"))
-      dir1.deleteRecursively()
-    }
-
+  def generateFinalOutput1RDD(df: DataFrame): RDD[String] = {
     df
       .withColumn("partialNeighborString", concat_ws(" ", col("partialNeighborArray")))
       .select("ID", "partialNeighborString")
@@ -127,17 +120,10 @@ object RecordFinder {
         .replace("[", "")
         .replace("]", "")
       )
-      .saveAsTextFile("./Output1.txt")
   }
 
-  def generateOutput2(df: DataFrame): Unit = {
-    if (Files.exists(Paths.get("./Output2.txt"))){
-      val dir2 = new Directory(new File("./Output2.txt"))
-      dir2.deleteRecursively()
-    }
-
-    df
-      .rdd
+  def generateFinalOutput2RDD(df: DataFrame): RDD[String] = {
+    df.rdd
       .map(row => (row.get(0), row.get(1).asInstanceOf[mutable.WrappedArray[String]].toSet))
       .reduceByKey(_ | _)
       .map(_.toString()
@@ -146,6 +132,14 @@ object RecordFinder {
         .replace(")", "")
         .replace(",", " ")
       )
-      .saveAsTextFile("./Output2.txt")
+  }
+
+  def saveOutputText(rdd: RDD[String], path: String): Unit = {
+    // clear a path if necessary, then output RDD to text
+    if (Files.exists(Paths.get(path))){
+      val dir = new Directory(new File(path))
+      dir.deleteRecursively()
+    }
+    rdd.saveAsTextFile(path)
   }
 }
