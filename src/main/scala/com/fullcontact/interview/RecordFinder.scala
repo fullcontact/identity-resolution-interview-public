@@ -39,7 +39,7 @@ object RecordFinder {
     saveOutputText(output2RDD, "./Output2.txt")
   }
 
-  def validateRecords(records: RDD[Array[String]]) : Unit = {
+  def validateRecords(records: RDD[Array[String]]) : Boolean = {
     val non7UppersInRecords = records.map(sa => areWordsNot7Uppers(sa))
       .map(ia => ia.sum)
       .reduce((a, b) => a + b)
@@ -51,9 +51,10 @@ object RecordFinder {
     if (records.count() == 0) {
       throw new RuntimeException("No records found from Records.txt. Please check path and data file.")
     }
+    return true
   }
 
-  def validateQueries(queries: RDD[String]) : Unit = {
+  def validateQueries(queries: RDD[String]) : Boolean = {
     val non7UppersInQueries = queries.map(s => isWordNot7Uppers(s))
       .reduce((a, b) => a + b)
     println("Number of non-7-uppercase-letter words imported from Queries.txt: " + non7UppersInQueries)
@@ -64,6 +65,7 @@ object RecordFinder {
     if (queries.count() == 0) {
       throw new RuntimeException("No records found from Queries.txt. Please check path and data file.")
     }
+    return true
   }
 
   def areWordsNot7Uppers(sa: Array[String]) : Array[Int] = {

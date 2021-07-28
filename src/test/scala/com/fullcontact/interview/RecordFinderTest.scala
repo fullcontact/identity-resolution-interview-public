@@ -1,8 +1,15 @@
 package com.fullcontact.interview
 
+import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{FunSuite, Matchers}
 
 class RecordFinderTest extends FunSuite with Matchers {
+
+  val conf = new SparkConf()
+    .setAppName("BradsRecordFinderTest")
+    .setMaster("local[4]")
+  val sc = new SparkContext(conf)
+
   test("Proper validation of an ID having/not having 7 uppercase letters") {
     assert(RecordFinder.isWordNot7Uppers("ABCDEFG") == 0)
     assert(RecordFinder.isWordNot7Uppers("ABCDEFg") == 1)
@@ -23,4 +30,12 @@ class RecordFinderTest extends FunSuite with Matchers {
     assert(RecordFinder.areWordsNot7Uppers(badArr3).sum == 1)
     assert(RecordFinder.areWordsNot7Uppers(badArr4).sum == 3)
   }
+
+  test("Validation of Queries input after RDD transformation") {
+    val goodQRdd = sc.parallelize(Array("ABCDEFG","HIJKLMN","OPQRSTU"))
+
+    assert(RecordFinder.validateQueries(goodQRdd) == true)
+
+  }
+
 }
