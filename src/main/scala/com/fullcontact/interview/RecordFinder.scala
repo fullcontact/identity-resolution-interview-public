@@ -1,12 +1,13 @@
 package com.fullcontact.interview
 import java.io.File
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.functions._
 
+import scala.collection.mutable
 import scala.reflect.io.Directory
 
 object RecordFinder {
@@ -20,48 +21,48 @@ object RecordFinder {
     import spark.implicits._
 
     // Reading info RDDs from Records.txt file (into arrays of strings) and Queries (into strings)
-    val recordsSplitRDD = sc.textFile("Records.txt")
+    val recordsSplitRDD = sc.textFile("./Records.txt")
       .map(l => l.split(" "))
-    val queriesRDD = sc.textFile("Queries.txt")
+    val queriesRDD = sc.textFile("./Queries.txt")
 
     // Row counts/validation on input data (are all septuplets of ASCII 65-90? Do we have non-zero row counts?)
     validateRecords(recordsSplitRDD)
     validateQueries(queriesRDD)
 
-    // The following gets us to a flattened 'bridge' DF of (record index : ID) to join against Queries
+    // Indexing records
     val recordsSplitIndexedDF = spark.createDataFrame(recordsSplitRDD.zipWithIndex())
       .withColumnRenamed("_1", "partialNeighborArray")
       .withColumnRenamed("_2", "recordsIndex")
+
+    // Creating a flattened 'bridge' DF of (record index : ID) to join against Queries
     val recordsIndicesFlatDF = recordsSplitIndexedDF.select($"recordsIndex", explode($"partialNeighborArray"))
       .withColumnRenamed("col", "ID")
 
-    // Bringing Queries into a dataframe for joining into the tables above.
+    // Bringing Queries into a dataframe for joining into the tables above. MIGHT need to output ordered by query index.
     val queriesDF = spark.createDataFrame(queriesRDD.zipWithIndex())
       .withColumnRenamed("_1", "ID")
       .withColumnRenamed("_2", "queryIndex")
 
-    // Getting pre-transforms, pre-ordering version of Output1
+    // Getting pre-transforms version of Output1 (find what Records each ID was in)
     val output1preTransformDF = queriesDF
       .join(recordsIndicesFlatDF, queriesDF("ID") === recordsIndicesFlatDF("ID"), "inner")
       .join(recordsSplitIndexedDF, recordsIndicesFlatDF("recordsIndex") === recordsSplitIndexedDF("recordsIndex"), "inner")
       .select(
         queriesDF("ID") as "ID",
-        queriesDF("queryIndex") as "queryIndex",
         recordsSplitIndexedDF("partialNeighborArray") as "partialNeighborArray"
       )
 
     // Transforming and outputting Output1 (clearing a path if necessary for an idempotent output)
     if (Files.exists(Paths.get("./Output1.txt"))){
-      val dir = new Directory(new File("./Output1.txt"))
-      dir.deleteRecursively()
+      val dir1 = new Directory(new File("./Output1.txt"))
+      dir1.deleteRecursively()
     }
-
-    val output1ConcatArray = output1preTransformDF
+    output1preTransformDF
       .select(
         output1preTransformDF("ID"),
         output1preTransformDF("partialNeighborArray")
       )
-      .withColumn("partialNeighborArray", concat_ws(" ", col("partialNeighborArray")))
+      .withColumn("partialNeighborString", concat_ws(" ", col("partialNeighborArray")))
       .rdd
       .map(_.toString()
         .replace(",", ": ")
@@ -69,6 +70,24 @@ object RecordFinder {
         .replace("]", "")
       )
       .saveAsTextFile("./Output1.txt")
+
+    // Transform output1 neighbor arrays into sets, union them, and output deduped Output 2 (clearing a path)
+    if (Files.exists(Paths.get("./Output2.txt"))){
+      val dir2 = new Directory(new File("./Output2.txt"))
+      dir2.deleteRecursively()
+    }
+    output1preTransformDF
+      .rdd
+      .map(row => (row.get(0), row.get(1).asInstanceOf[mutable.WrappedArray[String]].toSet))
+      .reduceByKey(_ | _)
+      .map(_.toString()
+        .replace(",Set", ": ")
+        .replace("(", "")
+        .replace(")", "")
+        .replace(",", " ")
+      )
+      .saveAsTextFile("./Output2.txt")
+
   }
 
   def validateRecords(records: RDD[Array[String]]) : Unit = {

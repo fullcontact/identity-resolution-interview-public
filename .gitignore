@@ -1,6 +1,5 @@
 build/
-Output1.txt/
-Output2.txt/
+Output*
 .gradle
 .idea
 .DS_Store

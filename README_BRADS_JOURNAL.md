@@ -110,9 +110,13 @@ LGDPBFS: GTLLOMC LGDPBFS ...
 
 I'll do a little searching here to figure out how I want to do that. [This StackOverflow link](https://stackoverflow.com/questions/44537889/write-store-dataframe-in-text-file) has got pretty much just what I need.
 
+## 2021-07-28 12:59 pm - Done with Output1 and on to Output2
 
+So we've actually got _most_ of what we need done for Output 2 (believe it or not!) What we _really_ need to do now is take our joined pre-transform output from Output 1 and `ReduceByKey` (after transforming the `Array[String]` column to `Set[String]`).
 
+## 2021-07-28 2:35 pm - Got Output2 done!
 
+Output 2 is done; time to clean up and write some tests!
 
 
 
