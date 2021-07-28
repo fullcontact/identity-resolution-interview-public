@@ -23,19 +23,19 @@ object RecordFinder {
     validateRecords(recordsSplitRDD)
     validateQueries(queriesRDD)
 
-    // Indexing arrays of strings from records
-    val recordsSplitRDDIndexed = recordsSplitRDD.zipWithIndex()
-      .map{case (k,v) => (v,k)}
+    // The following gets us to a flattened 'bridge' DF of (record index : ID) to join against Queries
+    val recordsSplitIndexedDF = spark.createDataFrame(recordsSplitRDD.zipWithIndex())
+      .withColumnRenamed("_1", "neighborArray")
+      .withColumnRenamed("_2", "recordsIndex")
+    val recordsIndicesFlatDF = recordsSplitIndexedDF.select($"recordsIndex", explode($"neighborArray"))
+      .withColumnRenamed("col", "ID")
 
-    // The following gets me to a flattened DF of (record index : ID)
-    val recordsSplitIndexedDF = spark.createDataFrame(recordsSplitRDDIndexed)
-    val indicesByRecordDF = recordsSplitIndexedDF.select($"_1", explode($"_2"))
-    val indArrayGroupDF = indicesByRecordDF.groupBy("col")
-      .agg(
-        collect_list("_1") as "recordRowNumbers"
-      ).withColumnRenamed("col", "ID")
+    // Bringing Queries into a dataframe for joining into the tables above. Order results by query ind?
+    val queriesDF = spark.createDataFrame(queriesRDD.zipWithIndex())
+      .withColumnRenamed("_1", "ID")
+      .withColumnRenamed("_2", "queryIndex")
 
-    indArrayGroupDF.show(10)
+    queriesDF.show(10)
 
   }
 

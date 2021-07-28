@@ -67,11 +67,15 @@ object RecordFinder {
   * This might seem kind of weird, but it'll give us a sort of 'just in time'/'lazy' way to output `Output1.txt` queries instead of redundantly repeating _every_ record row for _every_ ID that contains it.
   * It'll make our `Output1.txt` queries _somewhat_ slower while saving us having to store a bunch of redundant/non-normalized data.
 
+* _UPDATE FROM BELOW_: It's actually a little easier (for at least `Output1.txt`) to simply get the ID:(records index) mapping flattened, then join against the queries on flattened.ID = queries.ID.
+
 ## 2021-07-27 3:56 pm - Flattening out the records
 
 * I've flattened out the records to (record index : ID) 'pairs'; now will have to reassemble into a {ID : [record _indices_]} map.
 
+## 2021-07-28 10:23 am - time to join up queries and ID:records index
 
+* Time for my first join!
 
 
 
