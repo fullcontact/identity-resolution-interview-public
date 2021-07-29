@@ -12,7 +12,7 @@ import scala.reflect.io.Directory
 
 object RecordFinder {
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]) : Unit = {
     // Spark setup/init
     val conf = new SparkConf()
       .setAppName("BradsRecordFinder")
@@ -78,7 +78,7 @@ object RecordFinder {
     if (upperCount == 7) 0 else 1
   }
 
-  def generateOutput1DF(recordsSplitRDD: RDD[Array[String]], queriesRDD: RDD[String]): DataFrame = {
+  def generateOutput1DF(recordsSplitRDD: RDD[Array[String]], queriesRDD: RDD[String]) : DataFrame = {
     val spark: SparkSession = SparkSession.builder.master("local").getOrCreate
     import spark.implicits._
 
@@ -106,7 +106,7 @@ object RecordFinder {
       )
   }
 
-  def generateFinalOutput1RDD(df: DataFrame): RDD[String] = {
+  def generateFinalOutput1RDD(df: DataFrame) : RDD[String] = {
     df
       .withColumn("partialNeighborString", concat_ws(" ", col("partialNeighborArray")))
       .select("ID", "partialNeighborString")
@@ -130,7 +130,7 @@ object RecordFinder {
       )
   }
 
-  def saveOutputText(rdd: RDD[String], path: String): Unit = {
+  def saveOutputText(rdd: RDD[String], path: String) : Unit = {
     // clear a path if necessary, then output RDD to text
     if (Files.exists(Paths.get(path))){
       val dir = new Directory(new File(path))

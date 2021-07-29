@@ -118,24 +118,6 @@ So we've actually got _most_ of what we need done for Output 2 (believe it or no
 
 Output 2 is done; time to clean up and write some tests!
 
+## 2021-07-28 7:03 pm - Done with tests; writing instructions/discussion
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##
+Time to wrap up and open the PR 'for real'.
