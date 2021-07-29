@@ -43,34 +43,29 @@ object RecordFinder {
     val non7UppersInRecords = records.map(sa => areWordsNot7Uppers(sa))
       .map(ia => ia.sum)
       .reduce((a, b) => a + b)
-    println("Number of non-7-uppercase-letter words imported from Records.txt: " + non7UppersInRecords)
-    println("Number of records in Records.txt: " + records.count())
     if (non7UppersInRecords > 0){
       throw new RuntimeException("Non-7-uppercase-letter records found. Make sure all IDs are 7 uppercase letters.")
     }
     if (records.count() == 0) {
       throw new RuntimeException("No records found from Records.txt. Please check path and data file.")
     }
-    return true
+    true
   }
 
   def validateQueries(queries: RDD[String]) : Boolean = {
     val non7UppersInQueries = queries.map(s => isWordNot7Uppers(s))
       .reduce((a, b) => a + b)
-    println("Number of non-7-uppercase-letter words imported from Queries.txt: " + non7UppersInQueries)
-    println("Number of records in Queries.txt: " + queries.count())
     if (non7UppersInQueries > 0){
       throw new RuntimeException("Non-7-uppercase-letter queries found. Make sure all IDs are 7 uppercase letters.")
     }
     if (queries.count() == 0) {
       throw new RuntimeException("No records found from Queries.txt. Please check path and data file.")
     }
-    return true
+    true
   }
 
   def areWordsNot7Uppers(sa: Array[String]) : Array[Int] = {
-    val numUpperLetters = sa.map(w => isWordNot7Uppers(w))
-    return numUpperLetters
+    sa.map(w => isWordNot7Uppers(w))
   }
 
   def isWordNot7Uppers(str: String) : Int = {
@@ -81,7 +76,6 @@ object RecordFinder {
       }
     })
     if (upperCount == 7) 0 else 1
-
   }
 
   def generateOutput1DF(recordsSplitRDD: RDD[Array[String]], queriesRDD: RDD[String]): DataFrame = {
@@ -132,7 +126,7 @@ object RecordFinder {
         .replace(",Set", ": ")
         .replace("(", "")
         .replace(")", "")
-        .replace(",", " ")
+        .replace(",", "")
       )
   }
 
