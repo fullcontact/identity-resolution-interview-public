@@ -18,6 +18,16 @@ What I thought'd be more fitting is if we 'reversed' the `Records.txt` mapping s
 
 For Output 2, if we treat the groups/arrays of strings in Records as a `Set` that is _keyed_ to the IDs present in that set, we can `ReduceByKey` pretty effectively with logical OR (`|`) to get what we need.
 
+## Important Assumptions
+
+Here are several things I assumed when coding up my solution:
+
+* The client doesn't care about query result/output ordering;
+* The client is okay with not receiving any output at all when a query ID matches up with no record IDs;
+* The client hasn't specified a certain number of partitions they want their result set in
+
+Any of these could be fixed rather simply, but I figured (with the state of the code as-is), it'd be easier to retain these assumptions _for now_ (we can talk about this during discussion).
+
 ## Acknowledgements
 
 So I'm definitely not the strongest Scala/Spark programmer, but I had fun hacking this together! I _tried_ to do this in a way that avoided driver node collections whenever possible, but I may still be running more shuffles than I need to.
