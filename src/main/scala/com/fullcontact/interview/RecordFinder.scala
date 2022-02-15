@@ -38,7 +38,7 @@ object RecordFinder {
 
           val sparkBuilder = SparkSession.builder.appName(appName)
           if (isLocalMode) {
-            sparkBuilder.master("local")
+            sparkBuilder.master("local[*]")
           }
           implicit val spark: SparkSession = sparkBuilder.getOrCreate()
 

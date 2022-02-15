@@ -126,3 +126,11 @@ Query IDs _must not_ appear multiple times on the left side of this output.
 ID `FSNMWAF` demonstrates the difference between the two outputs in the samples above.
 
 
+## Running the Project 
+
+To run the project, execute this gradle command:
+
+```base
+gradle run --args="-r ./Records.txt -q ./Queries.txt  -u Output1.txt -m Output2.txt"
+```
+
