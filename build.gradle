@@ -38,6 +38,7 @@ dependencies {
 //    // Need scala-xml at test runtime
 //    testRuntimeOnly "org.scala-lang.modules:scala-xml_$scalaMajorVersion:1.2.0"
 
+    testImplementation "com.holdenkarau:spark-testing-base_$scalaMajorVersion:${sparkVersion}_1.1.1"
     testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.3'
     testRuntime group: 'org.pegdown', name: 'pegdown',version: '1.6.0'
 }
