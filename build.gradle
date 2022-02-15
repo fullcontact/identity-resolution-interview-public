@@ -12,15 +12,27 @@ repositories {
 
 ext {
     scalaVersion = '2.12.10'
+    scalaMajorVersion = '2.12'
     sparkVersion = '2.4.4'
+    scalaTestVersion = '3.0.3'
 }
 
 dependencies {
     compile(group: 'org.apache.spark', name: 'spark-core_2.12', version: "$sparkVersion")
     compile(group: 'org.apache.spark', name: 'spark-sql_2.12', version: "$sparkVersion")
 
-    testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.3'
+    implementation "com.github.scopt:scopt_$scalaMajorVersion:4.0.0-RC2"
+
     testRuntime group: 'org.pegdown', name: 'pegdown',version: '1.6.0'
+    implementation "com.github.scopt:scopt_$scalaMajorVersion:4.0.0-RC2"
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation "org.scalatest:scalatest_$scalaMajorVersion:$scalaTestVersion"
+    testImplementation "com.holdenkarau:spark-testing-base_$scalaMajorVersion:${sparkVersion}_1.1.1"
+    testImplementation "org.pegdown:pegdown:1.6.0"
+    testImplementation "com.github.mrpowers:spark-fast-tests_$scalaMajorVersion:0.21.3"
+
+    testImplementation "com.github.mrpowers:spark-fast-tests_2.11:0.21.3"
 }
 
 application {
