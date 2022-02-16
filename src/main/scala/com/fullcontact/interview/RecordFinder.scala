@@ -108,11 +108,6 @@ object RecordFinder {
     var df: DataFrame = spark.read.text(location)
 
     df.show(3)
-    // FIRST THOUGHT, USE A MAP WHICH WOULD HOPEFULLY BE FASTER THAN AN ARRAY TO SEARCH
-    //    df =  df
-    //      .withColumn("key", split($"value", " "))
-    //      .withColumn("idmap", map_from_arrays($"key", $"key"))
-    //      .drop("key")
 
     df = df.withColumn("trimmed", trim($"value"))
     df = df.select($"trimmed", split(col("value"), "\\s+").as("idarray"))
@@ -130,15 +125,25 @@ object RecordFinder {
    */
   @throws(classOf[Exception])
     def searchUnMergedRecords(searchDF: DataFrame, idDataFrame: DataFrame): DataFrame = {
+    import org.apache.spark.sql.functions._
+    import searchDF.sparkSession.implicits._
 
     // check out array_contains
     val thisSpark: SparkSession = searchDF.sparkSession
-    searchDF.createOrReplaceTempView("searchvals")
-    idDataFrame.createOrReplaceTempView("id_table")
+
+    val newSearchDF: DataFrame = searchDF.repartition($"searchkey")
+    newSearchDF.createOrReplaceTempView("searchvals")
+
+    var explodedIdTableDF = idDataFrame.select($"idarray", explode($"idarray").as("id"))
+    explodedIdTableDF = explodedIdTableDF.repartition($"id")
+    explodedIdTableDF.show(25)
+    explodedIdTableDF.createOrReplaceTempView("id_table")
+
     val joinedDF = thisSpark.sql(
       """select s.searchkey, i.idarray
-        |from id_table i, searchvals s
-        |where array_contains(i.idarray, s.searchkey)
+        |from id_table i
+        |join searchvals s
+        |on i.id = s.searchkey
         |""".stripMargin)
 
     joinedDF.show(20)
@@ -154,7 +159,8 @@ object RecordFinder {
     import org.apache.spark.sql.functions._
     import df.sparkSession.implicits._
 
-    var returnDF: DataFrame = df.groupBy("searchkey").agg(collect_set("idarray").as("idarraycombined"))
+    var returnDF: DataFrame = df.repartition($"searchkey")
+    returnDF = returnDF.groupBy("searchkey").agg(collect_set("idarray").as("idarraycombined"))
     returnDF = returnDF.withColumn("idarrayflattened", flatten($"idarraycombined"))
     returnDF =  returnDF.withColumn("idarray", array_distinct($"idarrayflattened"))
     returnDF = returnDF.drop("idarraycombined", "idarrayflattened")
