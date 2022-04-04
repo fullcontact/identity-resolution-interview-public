@@ -12,39 +12,47 @@ object RecordFinder {
       .master("local[*]")
       .getOrCreate()
 
-    import sparkSession.implicits._
+    try {
+      import sparkSession.implicits._
 
-    val queries: DataFrame = sparkSession.read
-      .textFile("Queries.txt")
-      .withColumnRenamed("value", "query")
+      val queries: DataFrame = sparkSession.read
+        .textFile("Queries.txt")
+        .withColumnRenamed("value", "query")
 
-    val records: DataFrame = sparkSession.read
-      .textFile("Records.txt")
-      .map(x => x.split("\\W+"))
-      .withColumnRenamed("value", "recordIds")
+      val records: DataFrame = sparkSession.read
+        .textFile("Records.txt")
+        .map(x => x.split("\\W+"))
+        .withColumnRenamed("value", "recordIds")
 
-    val recordsByQuery: DataFrame  = queries.join(records, SQLFunc.array_contains(records("recordIds"), queries("query")))
+      val recordsByQuery: DataFrame  = queries.join(records, SQLFunc.array_contains(records("recordIds"), queries("query")))
 
-    recordsByQuery.map(row => (row.getString(0), row.getSeq[String](1).mkString(" ")))
-      .write
-      .mode(SaveMode.Overwrite)
-      .option("delimiter", ":")
-      .csv("Output1.txt")
+      recordsByQuery.map(row => (row.getString(0), row.getSeq[String](1).mkString(" ")))
+        .write
+        .mode(SaveMode.Overwrite)
+        .option("delimiter", ":")
+        .csv("Output1.txt")
 
-    val reducedRecordsByQuery: DataFrame = recordsByQuery.groupBy($"query")
-      .agg(
-        SQLFunc.concat_ws(" ",
-          SQLFunc.array_distinct(
-            SQLFunc.flatten(
-              SQLFunc.collect_list($"recordIds")
+      val reducedRecordsByQuery: DataFrame = recordsByQuery.groupBy($"query")
+        .agg(
+          SQLFunc.concat_ws(" ",
+            SQLFunc.array_distinct(
+              SQLFunc.flatten(
+                SQLFunc.collect_list($"recordIds")
+              )
             )
           )
         )
-      )
 
-    reducedRecordsByQuery.write
-      .mode(SaveMode.Overwrite)
-      .option("delimiter", ":")
-      .csv("Output2.txt")
+      reducedRecordsByQuery.write
+        .mode(SaveMode.Overwrite)
+        .option("delimiter", ":")
+        .csv("Output2.txt")
+
+    } finally {
+      if (Option(sparkSession).isDefined) {
+        sparkSession.close()
+      }
+    }
+
   }
 }
