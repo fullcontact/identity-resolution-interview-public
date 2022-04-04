@@ -1,3 +1,6 @@
 build/
 .gradle
 .idea
+
+Output1.txt/
+Output2.txt/
