@@ -18,6 +18,13 @@ object RecordFinder {
       .textFile("Queries.txt")
       .withColumnRenamed("value", "query")
 
-    queries.show(5, false)
+    queries.show(5, truncate = false)
+
+    val records: DataFrame = sparkSession.read
+      .textFile("Records.txt")
+      .map(x => x.split("\\W+"))
+      .withColumnRenamed("value", "recordIds")
+
+    records.show(5, truncate = false)
   }
 }
