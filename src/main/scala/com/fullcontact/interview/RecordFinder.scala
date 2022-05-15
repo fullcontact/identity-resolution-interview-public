@@ -9,6 +9,8 @@ import org.apache.spark.sql.functions.{col,collect_list, array_distinct, flatten
  * Main Class to build and run the spark job
  */
 case class RecordFinder() {
+  //declare encoders needed for serializing data structures
+
 
   /**
    * Main method to start the spark job
@@ -16,44 +18,54 @@ case class RecordFinder() {
    */
   def start(implicit spark: SparkSession): Unit = {
 
-    //declare encoders needed for serializing data structures
-    implicit val stringEncorder: Encoder[String] = Encoders.STRING
-    implicit val recordsEncoder: Encoder[List[String]] = Encoders.product[List[String]]
-    implicit val resultsEncoder: Encoder[(String, List[String])] = Encoders.product[(String, List[String])]
-
     //read in data
-    val recordsDs = spark.read.text("Records.txt").withColumnRenamed("value", "idList")
+    val recordsDf = spark.read.text("Records.txt").withColumnRenamed("value", "idList")
 
     //read in queries
     val queriesDf = spark.read.text("Queries.txt").withColumnRenamed("value", "queryId")
 
-    //inner join using contains operator and cache to speed up writing to both files
-    //note that string contains() might not be the most efficient operator here but works.
-    val resultsDf = queriesDf.join(recordsDs).where( col("idList").contains(col("queryId"))).cache()
 
-    //map to a dataset to make it easier to process as a tuple with the following structure (queryId, resultList)
-    val resultsDs = resultsDf.map(r=>(r.getString(r.fieldIndex("queryId")),
-                                      r.getString(r.fieldIndex("idList")).split(" ").toList))
-
-    //group the list of lists per query ID and flatten them.
-    val groupedDs = resultsDs
-       .groupByKey { case(queryId, _) => queryId }
-       .mapGroups( (queryId,results)=> (queryId, results.toList.flatMap{case (_, resultList) => resultList.distinct}))
+    val (results1Output, results2Output) = findResults(recordsDf, queriesDf)
 
     //output first file
-    resultsDs
-      .map{case(queryId, resultList) => s"$queryId: ${resultList.mkString(" ")}"}
+    results1Output
       .write
       .mode("overwrite")
       .text("Output1.txt")
 
     //output second file
-    groupedDs
-      .map{case(queryId, resultList) => s"$queryId: ${resultList.mkString(" ")}"}
+    results2Output
       .write
       .mode("overwrite")
       .text("Output2.txt")
   }
+
+  def findResults(recordsDf : DataFrame, queriesDf : DataFrame ): (Dataset[String], Dataset[String]) = {
+
+    implicit val stringEncorder: Encoder[String] = Encoders.STRING
+    implicit val recordsEncoder: Encoder[List[String]] = Encoders.product[List[String]]
+    implicit val resultsEncoder: Encoder[(String, List[String])] = Encoders.product[(String, List[String])]
+
+    //inner join using contains operator and cache to speed up writing to both files
+    //note that string contains() might not be the most efficient operator here but works.
+    val resultsDf = queriesDf.join(recordsDf).where( col("idList").contains(col("queryId"))).cache()
+
+    //map to a dataset to make it easier to process as a tuple with the following structure (queryId, resultList)
+    val resultsDs = resultsDf.map(r=>(r.getString(r.fieldIndex("queryId")),
+      r.getString(r.fieldIndex("idList")).split(" ").toList))
+
+    //group the list of lists per query ID and flatten them.
+    val groupedDs = resultsDs
+      .groupByKey { case(queryId, _) => queryId }
+      .mapGroups( (queryId,results)=> (queryId, results.toList.flatMap{case (_, resultList) => resultList}.distinct))
+
+
+    val results1Output = resultsDs.map{case(queryId, resultList) => s"$queryId: ${resultList.mkString(" ")}"}
+    val results2Output = groupedDs.map{case(queryId, resultList) => s"$queryId: ${resultList.mkString(" ")}"}
+
+    (results1Output, results2Output)
+  }
+
 }
 
 /**
