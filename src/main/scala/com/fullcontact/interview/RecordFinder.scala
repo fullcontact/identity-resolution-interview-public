@@ -1,8 +1,12 @@
 package com.fullcontact.interview
 import com.fullcontact.interview.Helper._
+import org.apache.spark.api.java.JavaRDD.fromRDD
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.graphx._
+
+import java.io.File
+
 
 
 object RecordFinder {
@@ -19,6 +23,8 @@ object RecordFinder {
       .appName("Spark SQL basic example")
       .config("spark.master", "local")
       .getOrCreate()
+
+    spark.conf.set("spark.sql.broadcastTimeout",48000)
 
 
 
@@ -52,6 +58,7 @@ object RecordFinder {
 //    vertexData.foreach(v => println(v._2))
 
     val graph = Graph(vertexData, recordsEdgesRDD)
+    val recordsGraph = Graph.fromEdges(recordsEdgesRDD, 1)
 
     val vtx = graph.vertices
 
@@ -63,54 +70,105 @@ object RecordFinder {
 
     val vertexToAttributesCollect  = vertexToAttributes.collect()
 
-
-
-    val connectedComponentIds = cc.vertices.map( _._2).distinct()
-
-//    vertexToAttributesCollect.foreach(println(_))
-
-//    connectedComponentIds.foreach( x => println(x))
+//    vertexToAttributesCollect.foreach(v => println(v.toString()))
 
     val connectedCompVertices : VertexRDD[VertexId] = cc.vertices
-
     val connectedCompIdsToVertices = connectedCompVertices.groupBy(_._2)
 
 //    connectedCompIdsToVertices.foreach(x => println(x.toString()))
 
-    val queriesRDD: RDD[String] = spark.sparkContext
-          .textFile(queriesDataPath)
-          .map(_.trim)
 
-    val longToQueriesAsciiRDD = queriesRDD.map(c => (asciiToLong(c), c) )
 
 //    val joinQueriesRecords = longToQueriesAsciiRDD.leftOuterJoin(connectedCompIdsToVertices)
-
-//    connectedCompIdsToVertices.foreach(v => println(v.toString()))
-
-    //(77778878866683,CompactBuffer((87766679737070,77778878866683), (77778878866683,77778878866683)))
+//
+//    joinQueriesRecords.foreach(v => println(v.toString()))
 
     val connectedCompIdsToVerticesRDD = connectedCompIdsToVertices.
       map(
-
         x => (x._1
           , x._2.flatMap(t => Array(t._1, t._2))
         )
       )
 
-    // (76868984758878,List(78788288839085, 76868984758878, 76868984758878, 76868984758878, 82708667767572, 76868984758878))
+//    connectedCompIdsToVerticesCollect.take(200).foreach(v => println(v))
+
+    val connectedCompsRecordsGraph = recordsGraph.connectedComponents()
+
+    val connectedComponentsByIDs = connectedCompsRecordsGraph.vertices.groupBy(v => v._2).distinct()
+    //    val numComponents = connectedComponentsByIDs.count()
+
+    val queriesRDD: RDD[String] = spark.sparkContext
+      .textFile(queriesDataPath)
+      .map(_.trim)
+
+    val queriesPairRDD = queriesRDD.map( c => (c, asciiToLong(c)))
+    val numQueryItems = queriesRDD.count()
+    val numQueryLongItems = queriesPairRDD.map(_._2).distinct().count()
 
 
-    val connectedCompIdsToVerticesAscii = connectedCompIdsToVerticesRDD.
+//    val longToQueriesAsciiRDD: RDD[(Long, String)] = queriesRDD.map(q => ( asciiToLong(q), q))
+
+    val queriesAsciiItems = queriesRDD.map(c => asciiToLong(c)).distinct()
+    val numqueriesAsciiItems: Long = queriesAsciiItems.count()
+
+//    val joinQueriesRecords = longToQueriesAsciiRDD.join(connectedComponentsByIDs)
+
+//    joinQueriesRecords.take(20).foreach(j => println(j.toString()))
+
+
+//    val longToQueriesAsciiRDD = queriesRDD.map(c => (asciiToLong(c), c))
+
+//    val longToQueriesAscii = queriesRDD.map(
+//        x => connectedCompIdsToVerticesCollect.filter(
+//          c => c._2.toList.contains(x)
+//        )
+//
+//    )
+
+    val connectedCompIdsToVerticesAscii:RDD[(String, Iterable[String])] = connectedCompIdsToVerticesRDD.
       map(
-
         x => (vertexToAttributesCollect.filter( vc => vc._1 == x._1).map(_._2).head
           , x._2.map( cd => vertexToAttributesCollect.filter( pc => pc._1 == cd).map(_._2).head)
           )
       )
 
-//    connectedCompIdsToVerticesRDD.take(10).foreach(c => println(c.toString()))
+//    connectedCompIdsToVerticesAscii.take(10).foreach(p => println(p))
 
-    connectedCompIdsToVerticesAscii.take(10).foreach(c => println(c.toString()))
+//    val joinedQueriesRelations = queriesPairRDD.join(connectedCompIdsToVerticesAscii)
+//
+//    joinedQueriesRelations.take(10).foreach(p => println(p))
+
+
+
+//    val stretched: RDD[(String, Iterable[String])] =  connectedCompIdsToVerticesAscii.
+//      flatMap( c =>  c._2.map(x => (x, c._2)).toList)
+
+//    val stretcheRDD = spark.sparkContext.parallelize(stretched)
+
+//    stretched.take(20).foreach(s => println(s))
+
+//    queriesPairRDD.foreach(c => println(c.toString()))
+//
+//
+//
+//    val joinedQueriesRelations = queriesPairRDD.leftOuterJoin(stretched)
+
+    println("printing the take of the join")
+//
+//    joinedQueriesRelations.take(200).foreach(j => j.toString())
+
+    println("print join take done ")
+
+
+//    val longToQueriesAscii = queriesRDD.map(
+//        x => connectedCompIdsToVerticesAsciiCollect.filter(
+//          c => c._2.toList.contains(x)
+//        )
+//        )
+
+//    longToQueriesAscii.take(10).foreach(c => println(c.toString()))
+
+
 
     val relationsAscii  = connectedCompIdsToVerticesAscii.map(
       x => (
@@ -119,15 +177,52 @@ object RecordFinder {
       )
     )
 
-    relationsAscii.take(10).foreach(c => println(c.toString()))
+    relationsAscii.persist()
+    queriesRDD.persist()
 
+    println("making the join")
 
+    val queryJoin = queriesPairRDD.join(relationsAscii)
 
+    println("printing the join")
+    queryJoin.take(100).foreach( p => println(p))
 
+    // (UQLNVPG,(85817678868071,List(WLGRHWW)))
+    //(DEUPRZI,(68698580829073,List(VRSUHDV, JZYAJIT, XETDTKC, HFQLGYP, UEFSPWP)))
+
+    println("print-join done")
+
+    val queriedRelations = queryJoin.map(
+      q => (q._1
+        , q._2._2
+        )
+    )
+
+    val queriedRelationsOutput = queriedRelations.map(
+      q => q._1.concat(":"+q._2.mkString(" "))
+
+    )
+
+    queriedRelationsOutput.take(10).foreach(p => println(p))
+
+//    val relationsAsciiOutput = relationsAscii.map(
+//      x =>
+//        x._1.concat(":"+x._2.mkString(" "))
+//    )
+
+//    relationsAscii.take(10).foreach(c => println(c.toString()))
+
+    val outputPath: String = DataDirPath.concat("/Matches.txt")
+    println("Saving results to Matches.txt...")
+
+//    case class ResultsOutput(numberOf)
+//    relationsAsciiOutput.coalesce(3).saveAsTextFile(outputPath)
 
 
 
     spark.stop()
+
+    (queriedRelationsOutput.take(1), numQueryItems, numQueryLongItems)
 
   }
 }
