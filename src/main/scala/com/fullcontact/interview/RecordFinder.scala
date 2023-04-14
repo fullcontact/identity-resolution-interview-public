@@ -52,13 +52,9 @@ object RecordFinder {
 
 
     val graphData = recordsRDD.flatMap( v => v )
-
     val vertexData: RDD[(Long, (String, String))] = graphData.map( v => (asciiToLong(v), (v, v)) )
 
-//    vertexData.foreach(v => println(v._2))
-
     val graph = Graph(vertexData, recordsEdgesRDD)
-    val recordsGraph = Graph.fromEdges(recordsEdgesRDD, 1)
 
     val vtx = graph.vertices
 
@@ -67,18 +63,8 @@ object RecordFinder {
     val vertexToAttributes = vtx.map( v => (v._1, v._2._1))
     val vertexToAttributesCollect  = vertexToAttributes.collect()
 
-//    vertexToAttributesCollect.foreach(v => println(v.toString()))
-
     val connectedCompVertices : VertexRDD[VertexId] = cc.vertices
     val connectedCompIdsToVertices = connectedCompVertices.groupBy(_._2)
-
-//    connectedCompIdsToVertices.foreach(x => println(x.toString()))
-
-
-
-//    val joinQueriesRecords = longToQueriesAsciiRDD.leftOuterJoin(connectedCompIdsToVertices)
-//
-//    joinQueriesRecords.foreach(v => println(v.toString()))
 
     val connectedCompIdsToVerticesRDD = connectedCompIdsToVertices.
       map(
@@ -87,12 +73,6 @@ object RecordFinder {
         )
       )
 
-//    connectedCompIdsToVerticesCollect.take(200).foreach(v => println(v))
-
-    val connectedCompsRecordsGraph = recordsGraph.connectedComponents()
-
-    val connectedComponentsByIDs = connectedCompsRecordsGraph.vertices.groupBy(v => v._2).distinct()
-    //    val numComponents = connectedComponentsByIDs.count()
 
     val queriesRDD: RDD[String] = spark.sparkContext
       .textFile(queriesDataPath)
@@ -101,12 +81,6 @@ object RecordFinder {
     val queriesPairRDD = queriesRDD.map( c => (c, asciiToLong(c)))
     val numQueryItems = queriesRDD.count()
     val numQueryLongItems = queriesPairRDD.map(_._2).distinct().count()
-
-
-//    val longToQueriesAsciiRDD: RDD[(Long, String)] = queriesRDD.map(q => ( asciiToLong(q), q))
-
-    val queriesAsciiItems = queriesRDD.map(c => asciiToLong(c)).distinct()
-
 
     val connectedCompIdsToVerticesAscii:RDD[(String, Iterable[String])] = connectedCompIdsToVerticesRDD.
       map(
@@ -147,19 +121,10 @@ object RecordFinder {
 
     queriedRelationsOutput.take(10).foreach(p => println(p))
 
-//    val relationsAsciiOutput = relationsAscii.map(
-//      x =>
-//        x._1.concat(":"+x._2.mkString(" "))
-//    )
-
-//    relationsAscii.take(10).foreach(c => println(c.toString()))
-
     val outputPath: String = DataDirPath.concat("/Matches.txt")
     println("Saving results to Matches.txt...")
 
     queriedRelationsOutput.coalesce(3).saveAsTextFile(outputPath)
-
-
 
     spark.stop()
 

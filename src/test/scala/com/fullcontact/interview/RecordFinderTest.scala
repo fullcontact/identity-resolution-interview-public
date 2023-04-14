@@ -9,7 +9,7 @@ class RecordFinderTest extends FunSuite with Matchers {
     val numQueryItems = rec._2
     val numLongAsciiConvertItems = rec._3
 
-    assert(numQueryItems == numLongAsciiConvertItems) // check integrity of converting ASCII Query/Record data to Long for Graph
+    assert(numQueryItems == numLongAsciiConvertItems) // check integrity of converting ASCII Query/Record data to Long for GraphX
 
 
   }
