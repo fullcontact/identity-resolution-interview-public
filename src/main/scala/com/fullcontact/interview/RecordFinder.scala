@@ -10,7 +10,7 @@ import java.io.File
 
 
 object RecordFinder {
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): (Array[String], Long, Long) = {
     // TODO: Implement your job here
     val DataDirPath: String = System.getProperty("user.dir")
     val queriesDataPath: String = DataDirPath.concat("/Queries.txt")
@@ -215,8 +215,7 @@ object RecordFinder {
     val outputPath: String = DataDirPath.concat("/Matches.txt")
     println("Saving results to Matches.txt...")
 
-//    case class ResultsOutput(numberOf)
-//    relationsAsciiOutput.coalesce(3).saveAsTextFile(outputPath)
+    queriedRelationsOutput.coalesce(3).saveAsTextFile(outputPath)
 
 
 
