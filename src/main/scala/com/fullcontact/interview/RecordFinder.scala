@@ -65,9 +65,6 @@ object RecordFinder {
     val cc = graph.connectedComponents()
 
     val vertexToAttributes = vtx.map( v => (v._1, v._2._1))
-
-//    vertexToAttributes.foreach(v=> println(v)) //(85708268758575,UFRDKUK)
-
     val vertexToAttributesCollect  = vertexToAttributes.collect()
 
 //    vertexToAttributesCollect.foreach(v => println(v.toString()))
@@ -109,21 +106,7 @@ object RecordFinder {
 //    val longToQueriesAsciiRDD: RDD[(Long, String)] = queriesRDD.map(q => ( asciiToLong(q), q))
 
     val queriesAsciiItems = queriesRDD.map(c => asciiToLong(c)).distinct()
-    val numqueriesAsciiItems: Long = queriesAsciiItems.count()
 
-//    val joinQueriesRecords = longToQueriesAsciiRDD.join(connectedComponentsByIDs)
-
-//    joinQueriesRecords.take(20).foreach(j => println(j.toString()))
-
-
-//    val longToQueriesAsciiRDD = queriesRDD.map(c => (asciiToLong(c), c))
-
-//    val longToQueriesAscii = queriesRDD.map(
-//        x => connectedCompIdsToVerticesCollect.filter(
-//          c => c._2.toList.contains(x)
-//        )
-//
-//    )
 
     val connectedCompIdsToVerticesAscii:RDD[(String, Iterable[String])] = connectedCompIdsToVerticesRDD.
       map(
@@ -131,44 +114,6 @@ object RecordFinder {
           , x._2.map( cd => vertexToAttributesCollect.filter( pc => pc._1 == cd).map(_._2).head)
           )
       )
-
-//    connectedCompIdsToVerticesAscii.take(10).foreach(p => println(p))
-
-//    val joinedQueriesRelations = queriesPairRDD.join(connectedCompIdsToVerticesAscii)
-//
-//    joinedQueriesRelations.take(10).foreach(p => println(p))
-
-
-
-//    val stretched: RDD[(String, Iterable[String])] =  connectedCompIdsToVerticesAscii.
-//      flatMap( c =>  c._2.map(x => (x, c._2)).toList)
-
-//    val stretcheRDD = spark.sparkContext.parallelize(stretched)
-
-//    stretched.take(20).foreach(s => println(s))
-
-//    queriesPairRDD.foreach(c => println(c.toString()))
-//
-//
-//
-//    val joinedQueriesRelations = queriesPairRDD.leftOuterJoin(stretched)
-
-    println("printing the take of the join")
-//
-//    joinedQueriesRelations.take(200).foreach(j => j.toString())
-
-    println("print join take done ")
-
-
-//    val longToQueriesAscii = queriesRDD.map(
-//        x => connectedCompIdsToVerticesAsciiCollect.filter(
-//          c => c._2.toList.contains(x)
-//        )
-//        )
-
-//    longToQueriesAscii.take(10).foreach(c => println(c.toString()))
-
-
 
     val relationsAscii  = connectedCompIdsToVerticesAscii.map(
       x => (
@@ -186,9 +131,6 @@ object RecordFinder {
 
     println("printing the join")
     queryJoin.take(100).foreach( p => println(p))
-
-    // (UQLNVPG,(85817678868071,List(WLGRHWW)))
-    //(DEUPRZI,(68698580829073,List(VRSUHDV, JZYAJIT, XETDTKC, HFQLGYP, UEFSPWP)))
 
     println("print-join done")
 
