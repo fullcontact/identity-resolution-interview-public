@@ -11,6 +11,5 @@ class RecordFinderTest extends FunSuite with Matchers {
 
     assert(numQueryItems == numLongAsciiConvertItems) // check integrity of converting ASCII Query/Record data to Long for GraphX
 
-
   }
 }
